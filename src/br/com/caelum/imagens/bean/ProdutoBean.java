@@ -30,13 +30,16 @@ public class ProdutoBean implements Serializable {
 	private List<Foto> fotos;
 	private Foto foto = new Foto();
 	
-	public void salvaProduto(){
+	public String salvaProduto(){
 		DAO<Produto> dao = new DAO<Produto>(Produto.class);
 		dao.adiciona(produto);
+		this.produto = new Produto();
+		 this.produtos = dao.listaTodos();
 		FacesContext.getCurrentInstance().addMessage(
 				null,new FacesMessage(
 						FacesMessage.SEVERITY_INFO,
 						"Produto adicionado","Produto adicionado"));
+		return "produto?faces-redirect=true";
 		
 	}
 	public void salvaFoto(){
@@ -54,21 +57,28 @@ public class ProdutoBean implements Serializable {
 		
 	}
 	public void listaFotosProduto(){//Método que será responsável por gerar a imagem para ser exibida na tela.
-		DAO<Foto> dao = new DAO<Foto>(Foto.class);
-		dao.buscaPorId(produtoSelecionado.getId());
-		ServletContext context = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
-		File folder = new File(context.getRealPath("/temp"));
-		if (!folder.exists()){
-			folder.mkdir();
-			
-		for(Foto foto : fotos){
-			String nomeArquivo = foto.getId() + ".jpeg";
-			String arquivo = context.getRealPath("/temp") + File.separator + nomeArquivo;
-			
-			criaArquivo(foto.getImagem(),arquivo);
+		try {
+			DAO<Foto> dao = new DAO<Foto>(Foto.class);
+			dao.buscaPorId(produtoSelecionado.getId());
+			ServletContext context = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
+			File folder = new File(context.getRealPath("/temp"));
+			if (!folder.exists()){
+				folder.mkdir();
+				
+				for(Foto foto : fotos){
+					String nomeArquivo = foto.getId() + ".jpeg";
+					String arquivo = context.getRealPath("/temp") + File.separator + nomeArquivo;
+					
+					criaArquivo(foto.getImagem(),arquivo);
 		}
+			}
+			
+		} catch (Exception ex) {
+			// TODO: handle exception
+			ex.printStackTrace();
 		}
 	}
+
 	public void criaArquivo(byte[] bytes,String arquivo){// Método responsável por criar uma pasta temporária no 
 		//servidor para guardar as imagens para serem exibidas na tela.
 
@@ -88,8 +98,12 @@ public class ProdutoBean implements Serializable {
 		}
 		
 	}
-	public List<Produto> getProdutos() {
-		return produtos;
+	public List<Produto> getProdutos() { 
+		if (produtos == null){// se nï¿½o colocar o if, ele irï¿½ executar n pesquisas no banco, deixando o sistema mais lento
+		 System.out.println("Carregando produtos...");
+		 produtos = new DAO<Produto>(Produto.class).listaTodos();
+	 }
+	 return produtos;
 	}
 	public Produto getProduto() {
 		return produto;

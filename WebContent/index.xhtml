@@ -5,35 +5,85 @@
 	xmlns:h="http://java.sun.com/jsf/html"
 	xmlns:f="http://java.sun.com/jsf/core"
 	xmlns:p="http://primefaces.org/ui">
-	<h:body>
-		<p:ajaxStatus style="width:64px;height:64px;position:fixed;right:5px;bottom:5px">
-			<f:facet name="start">
-				<p:graphicImage value="/imagens/loading.gif"/>
-			</f:facet>
-			<f:facet name="complete">
-				<h:outputText value=""/>
-			</f:facet>
-		</p:ajaxStatus>
-		
-		<h:form id="form" enctype="multipar/form-data">
-			<p:growl id="msgs" showDetail="false" showSummary="true"/>
-			
-			<p:panel>
-				<p:panelGrid columns="2">
-					<h:outputText value="Nome"/>
-					<h:inputText value="#{produtoBean.produto.nome}"/>
-					
-					<h:outputText value="Preço"/>
-					<h:inputText value="#{produtoBean.produto.preco}"/>
-					
-					<p:commandButton value="Salvar" action="#{produtoBean.salvaProduto}" update=":form:msgs" />
-				</p:panelGrid>
+	
+	<ui:composition template="/_template.xhtml">
+		<ui:define name="corpo">
+			<h:form id="formProduto">
+				<fieldset>
+					<legend>Dados do produto</legend>
+						<h:inputHidden id="id" value="#{produtoBean.produto.id}"/>
+						
+						<h:outputText value="Nome"/>
+						<h:inputText value="#{produtoBean.produto.nome}"/>
+							
+						<h:outputText value="Preço"/>
+						<h:inputText value="#{produtoBean.produto.preco}"/>
+						
+						<p:commandButton value="Salvar" action="#{produtoBean.salvaProduto}" >
+							<f:ajax render=":formProduto :tabela" execute="@form"/>
+						</p:commandButton>
+						<p:commandButton value="Limpar" onclick="form.reset()"/>
+					</fieldset>
+				</h:form>
 				
-			
-			</p:panel>
-		
-		</h:form>
-
-
-	</h:body>
+				<h:form id="tabela">
+				<p:dataTable id="tabelaProdutos" var="produto" value="#{produtoBean.produtos}"  
+					 emptyMessage="Nenhum produto cadastrado">
+						<p:column>
+							<f:facet name="header">Nome</f:facet>#{produto.nome}
+						</p:column>
+						
+						<p:column>
+							<f:facet name="header">Preço</f:facet>#{produto.preco}
+						</p:column>
+						
+						<p:column>
+							<p:commandButton id="addButton" oncomplete="fotoDialog.show()"
+								icon="ui-icon-plus" title="Adicionar imagens">
+								<f:setPropertyActionListener target="#{produtoBean.produtoSelecionado}" value="#{produto}"/>
+							</p:commandButton>
+							<p:spacer width="10"/>
+							<p:commandButton id="showButton" icon="ui-icon-search" 
+								oncomplete="produtoDialog.show" action="#{produtoBean.listaFotosProduto}"
+									title="Visualizar imagens">
+								<f:setPropertyActionListener target="#{produtoBean.produtoSelecionado}" value="#{produto}"/>
+							</p:commandButton>
+						</p:column>
+				</p:dataTable>
+				<p:dialog header="Detalhes do produto" widgetVar="produtoDialog" resizable="false" 
+					id="produtoDlg" showEffect="fade" hideEffect="explode" modal="true" draggable="true"
+						maximizable="true" minimizable="true">
+						
+						<h:panelGrid id="infoFoto" columns="2" style="margin:0auto;">
+							<h:outputText value="Nenhuma imagem encontrada" rendered="#{produtoBean.fotos.size()==0}"/>
+							<p:galleria var="foto" value="#{produtoBean.fotos}" effect="slide" effectSpeed="100" panelHeight="250"
+								panelWidth="500" filmstripPosition="bottom" frameHeight="70" frameWidth="160"
+								showOverlays="true">
+								
+								<p:graphicImage value="/temp/#{foto.id}.jpg" cache="false" width="500" height="250"/>
+								<p:galleriaOverlay title="Descrição">
+									<h:outputText value="{foto.descricao}"/>
+								 </p:galleriaOverlay>
+							</p:galleria>
+						</h:panelGrid>
+				</p:dialog>
+				<p:dialog header="Adicionar imagens" widgetVar="fotoDialog" position="center" resizable="false"
+					id="fotoDlg" showEffect="fade" hideEffect="explode" modal="true" width="800">
+					
+					<h:panelGrid id="infoFoto" columns="2">
+					<h:outputText value="Foto"/>
+					<p:fileUpload fileUploadListener="#{produtoBean.processFileUpload}"
+						label="Escolher" cancelLabel="Cancelar"
+						sizeLimit="400000" invalidSizeMessage="Imagem muito grande"
+						auto="true" invalidFileMessage="Tipo de imagem não suportado"
+						allowTypes="/(\.|\/)(jpe?g|png)$/"/>	
+						<h:outputText value="Descrição"/>
+						<p:inputText value="#{produtoBean.foto.descricao}"/>
+						<p:commandButton value="Adicionar" icon="ui-icon-plus" action="#{produtoBean.salvaFoto}"/>		
+					</h:panelGrid>
+				
+				</p:dialog>
+			</h:form>
+		</ui:define>
+	</ui:composition>
 </html>
